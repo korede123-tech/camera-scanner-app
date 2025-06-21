@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Scanner App</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/howler"></script>
+  <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+</head>
+<body>
+  <div id="particles-js"></div>
+  <video id="video" width="640" height="480" autoplay muted></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
+  <p id="status">Waiting for detection...</p>
+
+  <script src="script.js"></script>
+  <script>
+    particlesJS.load('particles-js', 'https://cdn.jsdelivr.net/gh/VincentGarreau/particles.js/particles.json');
+  </script>
+</body>
+</html>
+
