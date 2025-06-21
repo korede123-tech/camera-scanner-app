@@ -1,72 +1,42 @@
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const statusEl = document.getElementById('status');
-const ctx = canvas.getContext('2d');
+document.addEventListener("DOMContentLoaded", () => {
+  const startButton = document.getElementById("startButton");
+  const startScreen = document.getElementById("startScreen");
+  const statusEl = document.getElementById("status");
+  const scene = document.querySelector("a-scene");
+  const imageTarget = document.querySelector("#image-target");
+  const particles = document.querySelector("#particles");
 
-// Load sound
-const sound = new Howl({
-  src: ['sound.mp3'],
-  volume: 1.0
-});
-
-let imageClassifier;
-
-// Start webcam with rear-facing camera (or fallback to front)
-navigator.mediaDevices.getUserMedia({
-  video: {
-    facingMode: { ideal: "environment" }
-  }
-})
-.then((stream) => {
-  video.srcObject = stream;
-})
-.catch((err) => {
-  console.warn("Rear camera not available, falling back:", err);
-  return navigator.mediaDevices.getUserMedia({ video: true }).then((fallbackStream) => {
-    video.srcObject = fallbackStream;
-  });
-});
-
-// Load ML model for classification
-ml5.imageClassifier('MobileNet')
-  .then((classifier) => {
-    imageClassifier = classifier;
-    detectLoop();
-  })
-  .catch((err) => {
-    console.error("Failed to load image classifier:", err);
+  const sound = new Howl({
+    src: ["sound.mp3"],
+    volume: 1.0
   });
 
-function detectLoop() {
-  setInterval(() => {
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  startButton.addEventListener("click", async () => {
+    try {
+      // Request camera permission
+      await navigator.mediaDevices.getUserMedia({ video: true });
 
-    imageClassifier.classify(canvas, (err, results) => {
-      if (err) {
-        console.error("Classification error:", err);
-        return;
-      }
+      // Hide start screen
+      startScreen.style.display = "none";
 
-      const label = results[0].label.toLowerCase();
-      console.log("Detected:", label);
+      // Start MindAR scene
+      const mindarComponent = scene.components["mindar-image"];
+      await mindarComponent.start();
 
-      // Update status text
-      statusEl.innerText = "Detected: " + label;
+      statusEl.textContent = "📷 Camera started. Point it at your image.";
+    } catch (e) {
+      statusEl.textContent = "❌ Failed to start camera: " + e.message;
+    }
+  });
 
-      // Trigger sound if label matches
-      if (
-        label.includes("book") ||
-        label.includes("paper") ||
-        label.includes("notebook") ||
-        label.includes("document") ||
-        label.includes("page") ||
-        label.includes("cover") ||
-        label.includes("text") ||
-        label.includes("white")
-      ) {
-        statusEl.innerText = "✅ Match Found! Playing sound...";
-        sound.play();
-      }
-    });
-  }, 2000); // Every 2 seconds
-}
+  imageTarget.addEventListener("targetFound", () => {
+    statusEl.textContent = "✅ Target detected!";
+    sound.play();
+    particles.setAttribute("visible", "true");
+  });
+
+  imageTarget.addEventListener("targetLost", () => {
+    statusEl.textContent = "❌ Lost target.";
+    particles.setAttribute("visible", "false");
+  });
+});
