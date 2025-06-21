@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
   const scene = document.querySelector("a-scene");
   const imageTarget = document.querySelector("#image-target");
-  const particles = document.querySelector("#particles");
 
   const sound = new Howl({
     src: ["sound.mp3"],
@@ -14,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   startButton.addEventListener("click", async () => {
     try {
-      // Request camera and set stream to video element
+      // Request camera and assign stream to video
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
         audio: false,
@@ -26,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
       startScreen.style.display = "none";
       statusEl.textContent = "📷 Camera started. Starting MindAR...";
 
-      // Wait for scene to be loaded and MindAR component ready
+      // Wait for scene loaded and MindAR component ready
       await new Promise((resolve) => {
         if (scene.hasLoaded && scene.components["mindar-image"]) {
           resolve();
@@ -40,7 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const mindarComponent = scene.components["mindar-image"];
       await mindarComponent.start();
 
-      // Show scanning message after MindAR starts
       statusEl.textContent = "🔍 Scanning image...";
       console.log("MindAR started");
     } catch (e) {
@@ -52,7 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
   imageTarget.addEventListener("targetFound", () => {
     console.log("DEBUG: targetFound event fired");
     statusEl.textContent = "✅ Target detected!";
-    particles.setAttribute("visible", "true");
 
     if (sound.state() === "loaded") {
       sound.play();
@@ -64,6 +61,5 @@ document.addEventListener("DOMContentLoaded", () => {
   imageTarget.addEventListener("targetLost", () => {
     console.log("DEBUG: targetLost event fired");
     statusEl.textContent = "🔍 Scanning image...";
-    particles.setAttribute("visible", "false");
   });
 });

@@ -38,7 +38,6 @@
       border-radius: 5px;
       z-index: 10;
     }
-    /* Added start button and screen for your script.js */
     #startScreen {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -62,14 +61,12 @@
 <body>
   <div id="status">📷 Tap "Start" to begin</div>
 
-  <!-- Added start screen and button to match your script.js -->
   <div id="startScreen">
-    <button id="startButton">KAYD</button>
+    <button id="startButton">Start Camera</button>
   </div>
 
   <video id="video" autoplay playsinline muted></video>
 
-  <!-- MindAR Scene -->
   <a-scene
     mindar-image="imageTargetSrc: targets.mind"
     embedded
@@ -84,14 +81,15 @@
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <a-entity mindar-image-target="targetIndex: 0" id="image-target">
-      <a-entity
-        id="particles"
-        visible="false"
-        particle-system="preset: dust; color: #00FFFF, #FFD700; particleCount: 120"
-        position="0 0 0"
-      ></a-entity>
-    </a-entity>
+    <!-- Particles always visible -->
+    <a-entity
+      id="particles"
+      visible="true"
+      particle-system="preset: dust; color: #00FFFF, #FFD700; particleCount: 120"
+      position="0 0 0"
+    ></a-entity>
+
+    <a-entity mindar-image-target="targetIndex: 0" id="image-target"></a-entity>
   </a-scene>
 
   <script src="script.js"></script>
