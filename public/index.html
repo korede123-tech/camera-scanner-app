@@ -2,92 +2,148 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Camera Test</title>
+  <title>Live Camera + Floating Particles</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- A-Frame + MindAR + Particle + Sound -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.1/dist/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image-aframe.prod.js"></script>
-  <script src="https://unpkg.com/aframe-particle-system-component@1.0.9/dist/aframe-particle-system-component.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
-
   <style>
-    body {
+    html, body {
       margin: 0;
       padding: 0;
-      background: black;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      height: 100%;
+      background: black;
+    }
+
+    #video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
       height: 100vh;
-      color: white;
-      font-family: sans-serif;
+      object-fit: cover;
+      z-index: 1;
     }
-    video {
-      width: 100%;
-      height: auto;
+
+    #particlesCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2;
+      pointer-events: none;
     }
+
+    #startScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+    }
+
+    #startButton {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background: white;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
     #status {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0,0,0,0.6);
-      padding: 8px 12px;
-      border-radius: 5px;
-      z-index: 10;
-    }
-    #startScreen {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 20;
-    }
-    #startButton {
-      padding: 15px 30px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      border: none;
-      background: #00ffff;
-      color: black;
-      border-radius: 5px;
+      color: white;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 6px;
+      z-index: 4;
     }
   </style>
 </head>
 <body>
-  <div id="status">📷 Tap "Start" to begin</div>
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="particlesCanvas"></canvas>
 
   <div id="startScreen">
     <button id="startButton">Start Camera</button>
   </div>
+  <div id="status">📷 Tap to Start</div>
 
-  <video id="video" autoplay playsinline muted></video>
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("particlesCanvas");
+    const ctx = canvas.getContext("2d");
+    const startScreen = document.getElementById("startScreen");
+    const statusEl = document.getElementById("status");
 
-  <a-scene
-    embedded
-    color-space="sRGB"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: true"
-    renderer="antialias: true; colorManagement: true; physicallyCorrectLights"
-  >
-    <a-assets>
-      <a-asset-item id="sound" src="sound.mp3"></a-asset-item>
-    </a-assets>
+    // Resize canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    // Start camera
+    document.getElementById("startButton").addEventListener("click", async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+        video.srcObject = stream;
+        startScreen.style.display = "none";
+        statusEl.textContent = "✅ Camera running. White particles floating.";
+        startParticles();
+      } catch (e) {
+        statusEl.textContent = "❌ Failed to start camera.";
+        console.error(e);
+      }
+    });
 
-    <!-- Blue animated particles always visible -->
-    <a-entity
-      id="particles"
-      particle-system="preset: dust; color: #00BFFF; particleCount: 200; size: 2"
-      position="0 0 -5"
-    ></a-entity>
-  </a-scene>
+    // Simple floating particles logic
+    const particles = [];
 
-  <script src="script.js"></script>
+    for (let i = 0; i < 100; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        radius: Math.random() * 3 + 1,
+        speedY: Math.random() * 0.5 + 0.2,
+        opacity: Math.random() * 0.5 + 0.3,
+      });
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "white";
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.globalAlpha = p.opacity;
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        p.y -= p.speedY;
+        if (p.y < 0) {
+          p.y = window.innerHeight + Math.random() * 100;
+          p.x = Math.random() * window.innerWidth;
+        }
+      });
+      ctx.globalAlpha = 1.0;
+      requestAnimationFrame(drawParticles);
+    }
+
+    function startParticles() {
+      drawParticles();
+    }
+  </script>
 </body>
 </html>
