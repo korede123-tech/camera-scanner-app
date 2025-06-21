@@ -83,14 +83,18 @@
     const ctx = canvas.getContext("2d");
     const startScreen = document.getElementById("startScreen");
     const statusEl = document.getElementById("status");
-
+  
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
-
+  
+    // Create audio object once
+    const audio = new Audio("sound.mp3");
+    audio.loop = true;
+  
     document.getElementById("startButton").addEventListener("click", async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -101,17 +105,12 @@
         startScreen.style.display = "none";
         statusEl.textContent = "✅ Camera running. White particles floating.";
         startParticles();
-
-        // ✅ Play sound.mp3
-        const audio = new Audio("sound.mp3");
-        audio.play().catch(err => console.warn("🔇 Couldn't play sound:", err));
-
       } catch (e) {
         statusEl.textContent = "❌ Failed to start camera.";
         console.error(e);
       }
     });
-
+  
     const particles = [];
     for (let i = 0; i < 100; i++) {
       particles.push({
@@ -122,7 +121,7 @@
         opacity: Math.random() * 0.5 + 0.3,
       });
     }
-
+  
     function drawParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "white";
@@ -131,7 +130,7 @@
         ctx.globalAlpha = p.opacity;
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
-
+  
         p.y -= p.speedY;
         if (p.y < 0) {
           p.y = window.innerHeight + Math.random() * 100;
@@ -141,10 +140,11 @@
       ctx.globalAlpha = 1.0;
       requestAnimationFrame(drawParticles);
     }
-
+  
     function startParticles() {
       drawParticles();
+      audio.play().catch(err => console.warn("🔇 Couldn't play sound:", err));
     }
-  </script>
+  </script>  
 </body>
 </html>
