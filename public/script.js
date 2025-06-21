@@ -11,7 +11,7 @@ const sound = new Howl({
 
 let imageClassifier;
 
-// Start webcam with rear-facing camera (or fallback)
+// Start webcam with rear-facing camera (or fallback to front)
 navigator.mediaDevices.getUserMedia({
   video: {
     facingMode: { ideal: "environment" }
@@ -21,7 +21,7 @@ navigator.mediaDevices.getUserMedia({
   video.srcObject = stream;
 })
 .catch((err) => {
-  console.error("Rear camera not available, using default camera:", err);
+  console.warn("Rear camera not available, falling back:", err);
   return navigator.mediaDevices.getUserMedia({ video: true }).then((fallbackStream) => {
     video.srcObject = fallbackStream;
   });
@@ -50,10 +50,10 @@ function detectLoop() {
       const label = results[0].label.toLowerCase();
       console.log("Detected:", label);
 
-      // Show label on screen for debugging
+      // Update status text
       statusEl.innerText = "Detected: " + label;
 
-      // Loosened detection condition
+      // Trigger sound if label matches
       if (
         label.includes("book") ||
         label.includes("paper") ||
@@ -64,9 +64,9 @@ function detectLoop() {
         label.includes("text") ||
         label.includes("white")
       ) {
-        statusEl.innerText = "Match Found! Triggering sound.";
+        statusEl.innerText = "✅ Match Found! Playing sound...";
         sound.play();
       }
     });
-  }, 2000); // Scan every 2 seconds
+  }, 2000); // Every 2 seconds
 }
