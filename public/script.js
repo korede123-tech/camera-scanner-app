@@ -14,7 +14,7 @@ let imageClassifier;
 // Start webcam with rear-facing camera (or fallback)
 navigator.mediaDevices.getUserMedia({
   video: {
-    facingMode: { ideal: "environment" } // Try rear camera
+    facingMode: { ideal: "environment" }
   }
 })
 .then((stream) => {
@@ -50,13 +50,23 @@ function detectLoop() {
       const label = results[0].label.toLowerCase();
       console.log("Detected:", label);
 
-      // You can customize this condition to be more specific
-      if (label.includes("book") || label.includes("page") || label.includes("document")) {
+      // Show label on screen for debugging
+      statusEl.innerText = "Detected: " + label;
+
+      // Loosened detection condition
+      if (
+        label.includes("book") ||
+        label.includes("paper") ||
+        label.includes("notebook") ||
+        label.includes("document") ||
+        label.includes("page") ||
+        label.includes("cover") ||
+        label.includes("text") ||
+        label.includes("white")
+      ) {
         statusEl.innerText = "Match Found! Triggering sound.";
         sound.play();
-      } else {
-        statusEl.innerText = "Scanning...";
       }
     });
-  }, 2000); // Check every 2 seconds
+  }, 2000); // Scan every 2 seconds
 }
