@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   startButton.addEventListener("click", async () => {
     try {
-      // Start camera stream for your video element
+      // Request camera and set stream to video element
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
         audio: false,
@@ -40,7 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const mindarComponent = scene.components["mindar-image"];
       await mindarComponent.start();
 
-      statusEl.textContent = "📷 MindAR started. Point at your image.";
+      // Show scanning message after MindAR starts
+      statusEl.textContent = "🔍 Scanning image...";
       console.log("MindAR started");
     } catch (e) {
       statusEl.textContent = "❌ Failed to start camera: " + e.message;
@@ -62,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   imageTarget.addEventListener("targetLost", () => {
     console.log("DEBUG: targetLost event fired");
-    statusEl.textContent = "❌ Lost target.";
+    statusEl.textContent = "🔍 Scanning image...";
     particles.setAttribute("visible", "false");
   });
 });
