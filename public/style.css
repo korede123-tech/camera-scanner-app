@@ -1,0 +1,18 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  overflow: hidden;
+  background: black;
+  color: white;
+}
+
+#message {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 10px 15px;
+  border-radius: 8px;
+  z-index: 10;
+  font-size: 16px;
+}

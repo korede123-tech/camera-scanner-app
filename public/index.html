@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Image Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.1/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <video id="video" autoplay playsinline width="100%" height="auto"></video>
+<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+<div id="status">Waiting for detection...</div>
+  <div id="startScreen">
+    <button id="startButton">▶️ Start Camera</button>
+  </div>
+
+  <div id="message">Waiting for permission...</div>
+
+  <a-scene
+    id="mindar-scene"
+    mindar-image="imageTargetSrc: ./targets.mind"
+    embedded
+    color-space="sRGB"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: true"
+    renderer="antialias: true; colorManagement: true; physicallyCorrectLights"
+    visible="false"
+  >
+    <a-assets>
+      <a-asset-item id="sound" src="sound.mp3"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0" id="image-target">
+      <a-plane color="yellow" height="0.5" width="0.5" position="0 0 0"></a-plane>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    const button = document.getElementById("startButton");
+    const scene = document.getElementById("mindar-scene");
+    const startScreen = document.getElementById("startScreen");
+
+    button.addEventListener("click", () => {
+      scene.setAttribute("visible", "true");
+      startScreen.style.display = "none";
+    });
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>
