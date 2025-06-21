@@ -84,7 +84,6 @@
     const startScreen = document.getElementById("startScreen");
     const statusEl = document.getElementById("status");
 
-    // Resize canvas
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -92,7 +91,6 @@
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    // Start camera
     document.getElementById("startButton").addEventListener("click", async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -103,15 +101,18 @@
         startScreen.style.display = "none";
         statusEl.textContent = "✅ Camera running. White particles floating.";
         startParticles();
+
+        // ✅ Play sound.mp3
+        const audio = new Audio("sound.mp3");
+        audio.play().catch(err => console.warn("🔇 Couldn't play sound:", err));
+
       } catch (e) {
         statusEl.textContent = "❌ Failed to start camera.";
         console.error(e);
       }
     });
 
-    // Simple floating particles logic
     const particles = [];
-
     for (let i = 0; i < 100; i++) {
       particles.push({
         x: Math.random() * window.innerWidth,
