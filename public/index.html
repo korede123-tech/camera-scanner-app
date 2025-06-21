@@ -68,7 +68,6 @@
   <video id="video" autoplay playsinline muted></video>
 
   <a-scene
-    mindar-image="imageTargetSrc: targets.mind"
     embedded
     color-space="sRGB"
     vr-mode-ui="enabled: false"
@@ -81,16 +80,12 @@
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- Blue particles (hidden by default, shown on detection) -->
+    <!-- Blue animated particles always visible -->
     <a-entity
       id="particles"
-      visible="false"
-      particle-system="preset: dust; color: #0000FF; particleCount: 150"
-      position="0 0 0"
+      particle-system="preset: dust; color: #00BFFF; particleCount: 200; size: 2"
+      position="0 0 -5"
     ></a-entity>
-
-    <!-- Image target -->
-    <a-entity mindar-image-target="targetIndex: 0" id="image-target"></a-entity>
   </a-scene>
 
   <script src="script.js"></script>
