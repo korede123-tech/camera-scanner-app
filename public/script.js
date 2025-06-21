@@ -11,37 +11,52 @@ const sound = new Howl({
 
 let imageClassifier;
 
-// Start webcam
-navigator.mediaDevices.getUserMedia({ video: true })
-  .then((stream) => {
-    video.srcObject = stream;
-  })
-  .catch((err) => {
-    console.error("Camera error:", err);
+// Start webcam with rear-facing camera (or fallback)
+navigator.mediaDevices.getUserMedia({
+  video: {
+    facingMode: { ideal: "environment" } // Try rear camera
+  }
+})
+.then((stream) => {
+  video.srcObject = stream;
+})
+.catch((err) => {
+  console.error("Rear camera not available, using default camera:", err);
+  return navigator.mediaDevices.getUserMedia({ video: true }).then((fallbackStream) => {
+    video.srcObject = fallbackStream;
   });
+});
 
-// Load image classifier
+// Load ML model for classification
 ml5.imageClassifier('MobileNet')
   .then((classifier) => {
     imageClassifier = classifier;
     detectLoop();
+  })
+  .catch((err) => {
+    console.error("Failed to load image classifier:", err);
   });
 
 function detectLoop() {
   setInterval(() => {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    imageClassifier.classify(canvas, (err, results) => {
-      if (err) return console.error(err);
 
-      const label = results[0].label;
+    imageClassifier.classify(canvas, (err, results) => {
+      if (err) {
+        console.error("Classification error:", err);
+        return;
+      }
+
+      const label = results[0].label.toLowerCase();
       console.log("Detected:", label);
-      if (label.includes("book") || label.includes("page")) {
+
+      // You can customize this condition to be more specific
+      if (label.includes("book") || label.includes("page") || label.includes("document")) {
         statusEl.innerText = "Match Found! Triggering sound.";
         sound.play();
       } else {
         statusEl.innerText = "Scanning...";
       }
     });
-  }, 2000); // Scan every 2 seconds
+  }, 2000); // Check every 2 seconds
 }
-
