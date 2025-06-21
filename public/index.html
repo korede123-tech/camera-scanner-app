@@ -2,22 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Scanner App</title>
+  <title>Image Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.1/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/howler"></script>
-  <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
 </head>
 <body>
-  <div id="particles-js"></div>
-  <video id="video" width="640" height="480" autoplay muted></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
-  <p id="status">Waiting for detection...</p>
+  <div id="message">Point your camera at the artwork to trigger sound</div>
+
+  <a-scene
+    mindar-image="imageTargetSrc: ./targets.mind; filterMinCF:0.0001; filterBeta: 0.001"
+    embedded
+    color-space="sRGB"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: true"
+    renderer="antialias: true; colorManagement: true; physicallyCorrectLights"
+  >
+    <a-assets>
+      <a-asset-item id="sound" src="sound.mp3"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0" id="image-target">
+      <!-- This is optional: an object to appear when image is detected -->
+      <a-plane color="yellow" height="0.5" width="0.5" position="0 0 0"></a-plane>
+    </a-entity>
+  </a-scene>
 
   <script src="script.js"></script>
-  <script>
-    particlesJS.load('particles-js', 'https://cdn.jsdelivr.net/gh/VincentGarreau/particles.js/particles.json');
-  </script>
 </body>
 </html>
-
