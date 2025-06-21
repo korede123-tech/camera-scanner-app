@@ -1,6 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const startButton = document.getElementById("startButton");
-  const startScreen = document.getElementById("startScreen");
   const statusEl = document.getElementById("status");
   const scene = document.querySelector("a-scene");
   const imageTarget = document.querySelector("#image-target");
@@ -8,35 +6,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sound = new Howl({
     src: ["sound.mp3"],
-    volume: 1.0
+    volume: 1.0,
   });
 
-  startButton.addEventListener("click", async () => {
+  // Start MindAR on user tap on status div (you had startButton but no button in html)
+  statusEl.addEventListener("click", async () => {
     try {
-      // Request camera permission
-      await navigator.mediaDevices.getUserMedia({ video: true });
-
-      // Hide start screen
-      startScreen.style.display = "none";
-
-      // Start MindAR scene
-      const mindarComponent = scene.components["mindar-image"];
-      await mindarComponent.start();
-
-      statusEl.textContent = "📷 Camera started. Point it at your image.";
+      const mindar = scene.components["mindar-image"];
+      if (!mindar.isStarted) {
+        await mindar.start();
+        statusEl.textContent = "📷 Camera started. Point at your image.";
+      }
     } catch (e) {
       statusEl.textContent = "❌ Failed to start camera: " + e.message;
+      console.error(e);
     }
   });
 
   imageTarget.addEventListener("targetFound", () => {
     statusEl.textContent = "✅ Target detected!";
-    sound.play();
     particles.setAttribute("visible", "true");
+    sound.play();
   });
 
   imageTarget.addEventListener("targetLost", () => {
-    statusEl.textContent = "❌ Lost target.";
+    statusEl.textContent = "❌ Target lost.";
     particles.setAttribute("visible", "false");
   });
 });
