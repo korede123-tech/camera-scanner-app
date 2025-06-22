@@ -1,11 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Live Camera + Floating Particles + Image Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ✅ Working A-Frame and MindAR -->
+  <!-- ✅ A-Frame and MindAR -->
   <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/MindAR-js/aframe/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/MindAR-js/aframe@v1.1.4/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
     html, body {
@@ -37,11 +39,12 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0, 0, 0, 0.85);
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 3;
+      z-index: 5;
     }
 
     #startButton {
@@ -64,6 +67,26 @@
       border-radius: 6px;
       z-index: 4;
     }
+
+    #previewOverlay {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 4;
+      display: none;
+      text-align: center;
+      font-size: 12px;
+      color: white;
+    }
+
+    #previewOverlay img {
+      width: 80px;
+      height: auto;
+      border: 2px solid white;
+      border-radius: 6px;
+      box-shadow: 0 0 6px rgba(255,255,255,0.6);
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
@@ -75,7 +98,11 @@
   </div>
   <div id="status">📷 Tap to Start</div>
 
-  <!-- MindAR Scene -->
+  <div id="previewOverlay">
+    <img src="image_target.jpg" alt="Look for this image" />
+    <div>Match this image</div>
+  </div>
+
   <a-scene
     mindar-image="imageTargetSrc: ./image_target.mind; autoStart: false;"
     color-space="sRGB"
@@ -103,6 +130,10 @@
     const ctx = canvas.getContext("2d");
     const startScreen = document.getElementById("startScreen");
     const statusEl = document.getElementById("status");
+    const previewOverlay = document.getElementById("previewOverlay");
+    const aframeAudio = document.querySelector("#scanSound");
+    const sceneEl = document.querySelector("#mindarScene");
+    const particlesContainer = document.getElementById("particles");
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
@@ -113,11 +144,6 @@
 
     const floatAudio = new Audio("sound.mp3");
     floatAudio.loop = true;
-
-    const aframeAudio = document.querySelector("#scanSound");
-
-    const sceneEl = document.querySelector("#mindarScene");
-    const particlesContainer = document.getElementById("particles");
 
     const canvasParticles = [];
     for (let i = 0; i < 100; i++) {
@@ -197,6 +223,7 @@
     document.getElementById("startButton").addEventListener("click", async () => {
       startScreen.style.display = "none";
       statusEl.textContent = "🔍 Starting camera...";
+      previewOverlay.style.display = "block";
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -207,41 +234,40 @@
 
         statusEl.textContent = "📡 Initializing AR...";
 
-        await sceneEl.components["mindar-image"].start();
+        sceneEl.addEventListener("loaded", async () => {
+          await sceneEl.components["mindar-image"].start();
 
-        drawCanvasParticles();
-        floatAudio.play().catch(err => console.warn("🔇 Canvas audio play failed:", err));
+          drawCanvasParticles();
+          floatAudio.play().catch(err => console.warn("🔇 Canvas audio play failed:", err));
 
-        const target = document.querySelector("[mindar-image-target]");
-        target.addEventListener("targetFound", () => {
-          console.log("🎯 Target found");
-          if (!hasPlayedSound) {
-            aframeAudio.play().catch(err => console.warn("🔇 AR audio play failed:", err));
-            hasPlayedSound = true;
-          }
+          const target = document.querySelector("[mindar-image-target]");
+          target.addEventListener("targetFound", () => {
+            console.log("🎯 Target found");
+            if (!hasPlayedSound) {
+              aframeAudio.play().catch(err => console.warn("🔇 AR audio play failed:", err));
+              hasPlayedSound = true;
+            }
 
-          if (!isAnimating) {
-            createARParticles();
-            isAnimating = true;
-            animateARParticles();
-            statusEl.textContent = "✅ Image detected. Particles floating.";
-          }
+            if (!isAnimating) {
+              createARParticles();
+              isAnimating = true;
+              animateARParticles();
+              statusEl.textContent = "✅ Image detected. Particles floating.";
+            }
+          });
+
+          target.addEventListener("targetLost", () => {
+            console.log("🔍 Target lost");
+            statusEl.textContent = "📷 Searching for image...";
+            if (hasPlayedSound) {
+              aframeAudio.pause();
+              aframeAudio.currentTime = 0;
+              hasPlayedSound = false;
+            }
+            clearARParticles();
+            isAnimating = false;
+          });
         });
-
-        target.addEventListener("targetLost", () => {
-          console.log("🔍 Target lost");
-          statusEl.textContent = "📷 Searching for image...";
-
-          if (hasPlayedSound) {
-            aframeAudio.pause();
-            aframeAudio.currentTime = 0;
-            hasPlayedSound = false;
-          }
-
-          clearARParticles();
-          isAnimating = false;
-        });
-
       } catch (e) {
         console.error(e);
         statusEl.textContent = "❌ Failed to start camera or AR.";
