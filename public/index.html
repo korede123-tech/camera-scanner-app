@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Live Camera + Floating Particles</title>
+  <title>Live Camera + Floating Particles + Image Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- A-Frame & MindAR -->
+  <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/aframe/mindar-image-aframe.prod.js"></script>
+
   <style>
     html, body {
       margin: 0;
@@ -13,7 +18,7 @@
       background: black;
     }
 
-    #video {
+    #video, #particlesCanvas {
       position: fixed;
       top: 0;
       left: 0;
@@ -24,11 +29,6 @@
     }
 
     #particlesCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
       z-index: 2;
       pointer-events: none;
     }
@@ -77,43 +77,53 @@
   </div>
   <div id="status">📷 Tap to Start</div>
 
+  <!-- MindAR Scene -->
+  <a-scene
+    mindar-image="imageTargetSrc: ./image_target.mind; autoStart: false;"
+    color-space="sRGB"
+    embedded
+    renderer="colorManagement: true, physicallyCorrectLights"
+    device-orientation-permission-ui="enabled: false"
+    vr-mode-ui="enabled: false"
+    id="mindarScene"
+    style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;"
+  >
+    <a-assets>
+      <audio id="scanSound" src="sound.mp3" preload="auto"></audio>
+    </a-assets>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity id="particles"></a-entity>
+    </a-entity>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  </a-scene>
+
   <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("particlesCanvas");
     const ctx = canvas.getContext("2d");
     const startScreen = document.getElementById("startScreen");
     const statusEl = document.getElementById("status");
-  
+
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
-  
-    // Create audio object once
-    const audio = new Audio("sound.mp3");
-    audio.loop = true;
-  
-    document.getElementById("startButton").addEventListener("click", async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false,
-        });
-        video.srcObject = stream;
-        startScreen.style.display = "none";
-        statusEl.textContent = "✅ Camera running. White particles floating.";
-        startParticles();
-      } catch (e) {
-        statusEl.textContent = "❌ Failed to start camera.";
-        console.error(e);
-      }
-    });
-  
-    const particles = [];
+
+    const floatAudio = new Audio("sound.mp3");
+    floatAudio.loop = true;
+
+    const aframeAudio = document.querySelector("#scanSound");
+
+    const sceneEl = document.querySelector("#mindarScene");
+    const particlesContainer = document.getElementById("particles");
+
+    const canvasParticles = [];
     for (let i = 0; i < 100; i++) {
-      particles.push({
+      canvasParticles.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
         radius: Math.random() * 3 + 1,
@@ -121,16 +131,16 @@
         opacity: Math.random() * 0.5 + 0.3,
       });
     }
-  
-    function drawParticles() {
+
+    function drawCanvasParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "white";
-      particles.forEach(p => {
+      canvasParticles.forEach(p => {
         ctx.beginPath();
         ctx.globalAlpha = p.opacity;
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
-  
+
         p.y -= p.speedY;
         if (p.y < 0) {
           p.y = window.innerHeight + Math.random() * 100;
@@ -138,13 +148,107 @@
         }
       });
       ctx.globalAlpha = 1.0;
-      requestAnimationFrame(drawParticles);
+      requestAnimationFrame(drawCanvasParticles);
     }
-  
-    function startParticles() {
-      drawParticles();
-      audio.play().catch(err => console.warn("🔇 Couldn't play sound:", err));
+
+    let particleData = [];
+    let isAnimating = false;
+    let hasPlayedSound = false;
+
+    function createARParticles(num = 70) {
+      clearARParticles();
+      for (let i = 0; i < num; i++) {
+        const p = document.createElement("a-entity");
+        const x = (Math.random() - 0.5) * 0.6;
+        const y = (Math.random() - 0.5) * 0.6;
+        const z = (Math.random() - 0.5) * 0.6;
+        const scale = Math.random() * 0.015 + 0.01;
+
+        p.setAttribute("geometry", `primitive: sphere; radius: ${scale}`);
+        p.setAttribute("material", "color: white; opacity: 0.8; transparent: true");
+        p.setAttribute("position", `${x} ${y} ${z}`);
+        particlesContainer.appendChild(p);
+        particleData.push({ el: p, speedY: Math.random() * 0.005 + 0.002 });
+      }
     }
-  </script>  
+
+    function animateARParticles() {
+      if (!isAnimating) return;
+      particleData.forEach(p => {
+        const pos = p.el.getAttribute("position");
+        pos.y += p.speedY;
+        if (pos.y > 0.4) {
+          pos.y = -0.4;
+          pos.x = (Math.random() - 0.5) * 0.6;
+          pos.z = (Math.random() - 0.5) * 0.6;
+        }
+        p.el.setAttribute("position", pos);
+      });
+      requestAnimationFrame(animateARParticles);
+    }
+
+    function clearARParticles() {
+      particleData.forEach(p => {
+        if (particlesContainer.contains(p.el)) {
+          particlesContainer.removeChild(p.el);
+        }
+      });
+      particleData = [];
+    }
+
+    document.getElementById("startButton").addEventListener("click", async () => {
+      startScreen.style.display = "none";
+      statusEl.textContent = "🔍 Starting camera...";
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+        video.srcObject = stream;
+
+        statusEl.textContent = "📡 Initializing AR...";
+
+        await sceneEl.components["mindar-image"].start();
+
+        drawCanvasParticles();
+        floatAudio.play().catch(err => console.warn("🔇 Canvas audio play failed:", err));
+
+        const target = document.querySelector("[mindar-image-target]");
+        target.addEventListener("targetFound", () => {
+          console.log("🎯 Target found");
+          if (!hasPlayedSound) {
+            aframeAudio.play().catch(err => console.warn("🔇 AR audio play failed:", err));
+            hasPlayedSound = true;
+          }
+
+          if (!isAnimating) {
+            createARParticles();
+            isAnimating = true;
+            animateARParticles();
+            statusEl.textContent = "✅ Image detected. Particles floating.";
+          }
+        });
+
+        target.addEventListener("targetLost", () => {
+          console.log("🔍 Target lost");
+          statusEl.textContent = "📷 Searching for image...";
+
+          if (hasPlayedSound) {
+            aframeAudio.pause();
+            aframeAudio.currentTime = 0;
+            hasPlayedSound = false;
+          }
+
+          clearARParticles();
+          isAnimating = false;
+        });
+
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "❌ Failed to start camera or AR.";
+      }
+    });
+  </script>
 </body>
 </html>

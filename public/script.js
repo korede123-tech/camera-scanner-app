@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let hasPlayedSound = false;
 
   function createParticles(num = 70) {
+    clearParticles(); // clear any existing before creating new
     for (let i = 0; i < num; i++) {
       const p = document.createElement("a-entity");
       const x = (Math.random() - 0.5) * 0.6;
@@ -42,16 +43,32 @@ document.addEventListener("DOMContentLoaded", () => {
     requestAnimationFrame(animateParticles);
   }
 
+  function clearParticles() {
+    particleData.forEach(p => {
+      if (particlesContainer.contains(p.el)) {
+        particlesContainer.removeChild(p.el);
+      }
+    });
+    particleData = [];
+  }
+
   startButton.addEventListener("click", async () => {
     startScreen.style.display = "none";
     statusEl.textContent = "🔍 Point camera at image...";
 
-    await sceneEl.components["mindar-image"].start();
+    try {
+      await sceneEl.components["mindar-image"].start();
+    } catch (err) {
+      console.error("❌ Failed to start MindAR scene:", err);
+      statusEl.textContent = "❌ Failed to start MindAR scene.";
+      return;
+    }
 
     const target = document.querySelector("[mindar-image-target]");
     target.addEventListener("targetFound", () => {
+      console.log("🎯 Target found");
       if (!hasPlayedSound) {
-        audio.play();
+        audio.play().catch(err => console.warn("🔇 Sound play failed:", err));
         hasPlayedSound = true;
       }
 
@@ -64,8 +81,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     target.addEventListener("targetLost", () => {
+      console.log("🔍 Target lost");
       statusEl.textContent = "📷 Searching for image...";
-      hasPlayedSound = false;
+
+      if (hasPlayedSound) {
+        audio.pause();
+        audio.currentTime = 0;
+        hasPlayedSound = false;
+      }
+
+      clearParticles();
+      isAnimating = false;
     });
   });
 });
