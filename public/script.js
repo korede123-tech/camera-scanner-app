@@ -11,6 +11,20 @@ document.addEventListener("DOMContentLoaded", () => {
   let isAnimating = false;
   let hasPlayedSound = false;
 
+  // ✅ Detection timeout logic
+  let detectionTimeout;
+  let detectionResolved = false;
+
+  function startDetectionTimer(timeout = 10000) {
+    clearTimeout(detectionTimeout);
+    detectionResolved = false;
+    detectionTimeout = setTimeout(() => {
+      if (!detectionResolved) {
+        statusEl.textContent = "❌ Wrong image. Please use the correct one.";
+      }
+    }, timeout);
+  }
+
   function createParticles(num = 70) {
     clearParticles(); // clear any existing before creating new
     for (let i = 0; i < num; i++) {
@@ -58,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       await sceneEl.components["mindar-image"].start();
+      startDetectionTimer(); // ✅ Start watching for wrong image
     } catch (err) {
       console.error("❌ Failed to start MindAR scene:", err);
       statusEl.textContent = "❌ Failed to start MindAR scene.";
@@ -67,6 +82,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = document.querySelector("[mindar-image-target]");
     target.addEventListener("targetFound", () => {
       console.log("🎯 Target found");
+      detectionResolved = true; // ✅ Mark as successful
+
       if (!hasPlayedSound) {
         audio.play().catch(err => console.warn("🔇 Sound play failed:", err));
         hasPlayedSound = true;
@@ -95,4 +112,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
-// force update on Sun Jun 22 16:27:03 WAT 2025
