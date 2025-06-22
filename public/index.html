@@ -104,15 +104,15 @@
   </div>
 
   <a-scene
-    mindar-image="imageTargetSrc: ./image_target.mind; autoStart: false;"
-    color-space="sRGB"
-    embedded
-    renderer="colorManagement: true, physicallyCorrectLights"
-    device-orientation-permission-ui="enabled: false"
-    vr-mode-ui="enabled: false"
-    id="mindarScene"
-    style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;"
-  >
+  mindar-image="imageTargetSrc: /image_target.mind; autoStart: false;" <!-- ✅ Changed this line -->
+  color-space="sRGB"
+  embedded
+  renderer="colorManagement: true, physicallyCorrectLights"
+  device-orientation-permission-ui="enabled: false"
+  vr-mode-ui="enabled: false"
+  id="mindarScene"
+  style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;"
+>
     <a-assets>
       <audio id="scanSound" src="sound.mp3" preload="auto"></audio>
     </a-assets>
